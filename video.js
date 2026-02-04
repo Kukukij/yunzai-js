@@ -288,7 +288,7 @@ export class videojx extends plugin {
   //哔站视频自动选择视频画质
   autoQuality(e, duration) {
     let qn = 80;
-    if (duration >= 180) {
+    if (duration >= 300) {
       e.reply("视频时长超过5分钟，已将视频画质降低至360p");
       qn = 16;
     }
