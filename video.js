@@ -99,6 +99,9 @@ export class videojx extends plugin {
       `作者:${res.owner.name}\n标题:${res.title}\n简介:${res.desc}\n\n点赞:${res.stat.like}      收藏:${res.stat.favorite}\n投币:${res.stat.coin}      转发:${res.stat.share}\n正在解析b站视频，请等待......`
     ]);
     let qn = this.autoQuality(e, res.duration);
+    if (qn === null) {
+      return false;
+    }
     url = `https://api.bilibili.com/x/player/playurl?avid=${res.aid}&cid=${res.cid}&qn=${qn}`;
     res = await this.tourl(url);
     url = res.durl[0].url;
@@ -288,7 +291,10 @@ export class videojx extends plugin {
   //哔站视频自动选择视频画质
   autoQuality(e, duration) {
     let qn = 80;
-    if (duration >= 300) {
+    if (duration >= 600) {
+      e.reply("视频时长超过10分钟，不做解析");
+      return null;
+    } else if (duration >= 300) {
       e.reply("视频时长超过5分钟，已将视频画质降低至360p");
       qn = 16;
     }
