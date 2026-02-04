@@ -154,7 +154,7 @@ export class videojx extends plugin {
     // 格式化点赞数
     let likeStr = "";
     if (like >= 10000) {
-      likeStr = (like / 10000).toFixed(1) + "万个";
+      likeStr = (like / 10000).toFixed(1) + "万";
     } else {
       likeStr = like + "个";
     }
@@ -163,7 +163,7 @@ export class videojx extends plugin {
       `作者: ${author}\n` +
       `抖音号: ${uid}\n` +
       `标题/描述: ${title}\n` +
-      `点赞数: ${likeStr}`
+      `点赞: ${likeStr}`
     );
 
     // 发送视频封面
