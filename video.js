@@ -105,83 +105,83 @@ export class videojx extends plugin {
 
   //抖音解析
   async douyin(e, url) {
-  try {
-    logger.info("[视频解析]-开始解析抖音URL");
+    try {
+      logger.info("[视频解析]-开始解析抖音URL");
 
-    // 调用新API
-    let apiUrl = `http://api.xhus.cn/api/douyin?url=${encodeURIComponent(url)}`;
-    let res = await fetch(apiUrl);
+      // 调用新API
+      let apiUrl = `http://api.xhus.cn/api/douyin?url=${encodeURIComponent(url)}`;
+      let res = await fetch(apiUrl);
 
-    if (!res.ok) {
-      throw new Error(`API请求失败，状态码: ${res.status}`);
-    }
+      if (!res.ok) {
+        throw new Error(`API请求失败，状态码: ${res.status}`);
+      }
 
-    let data = await res.json();
+      let data = await res.json();
 
-    // 检查API返回状态
-    if (data.code !== 200) {
-      throw new Error(data.msg || 'API返回错误');
-    }
+      // 检查API返回状态
+      if (data.code !== 200) {
+        throw new Error(data.msg || 'API返回错误');
+      }
 
-    const videoData = data.data;
+      const videoData = data.data;
 
-    // 检测是否为图集
-    if (videoData.images && Array.isArray(videoData.images) && videoData.images.length > 0) {
-      await e.reply("暂不支持图集解析");
-      return false;
-    }
+      // 检测是否为图集
+      if (videoData.images && Array.isArray(videoData.images) && videoData.images.length > 0) {
+        await e.reply("暂不支持图集解析");
+        return false;
+      }
 
-    const author = videoData.author || "未知作者";
-    const uid = videoData.uid || "未知";
-    const title = videoData.title || "无描述";
-    const like = videoData.like || 0;
-    const cover = videoData.cover;
-    const avatar = videoData.avatar;
-    const videoUrl = videoData.url;
+      const author = videoData.author || "未知作者";
+      const uid = videoData.uid || "未知";
+      const title = videoData.title || "无描述";
+      const like = videoData.like || 0;
+      const cover = videoData.cover;
+      const avatar = videoData.avatar;
+      const videoUrl = videoData.url;
 
-    if (!videoUrl) {
-      throw new Error('未获取到视频地址');
-    }
+      if (!videoUrl) {
+        throw new Error('未获取到视频地址');
+      }
 
-    logger.info("[视频解析]-抖音[视频]");
-    let msg = [];
+      logger.info("[视频解析]-抖音[视频]");
+      let msg = [];
 
-    // 发送作者头像
-    if (avatar) {
-      msg.push(segment.image(avatar));
-    }
+      // 发送作者头像
+      if (avatar) {
+        msg.push(segment.image(avatar));
+      }
 
-    // 格式化点赞数
-    let likeStr = "";
-    if (like >= 10000) {
-      likeStr = (like / 10000).toFixed(1) + "万";
-    } else {
-      likeStr = like + "个";
-    }
+      // 格式化点赞数
+      let likeStr = "";
+      if (like >= 10000) {
+        likeStr = (like / 10000).toFixed(1) + "万";
+      } else {
+        likeStr = like + "个";
+      }
 
-    msg.push(
-      `作者: ${author}\n` +
-      `抖音号: ${uid}\n` +
-      `标题/描述: ${title}\n` +
-      `点赞: ${likeStr}`
-    );
+      msg.push(
+        `作者: ${author}\n` +
+        `抖音号: ${uid}\n` +
+        `标题/描述: ${title}\n` +
+        `点赞: ${likeStr}`
+      );
 
-    // 发送视频封面
-    if (cover) {
-      msg.push(segment.image(cover));
-    }
+      // 发送视频封面
+      if (cover) {
+        msg.push(segment.image(cover));
+      }
 
-    await e.reply(msg);
+      await e.reply(msg);
 
-    let response = await fetch(videoUrl);
-    await this.buff(e, "douyin", response);
-    return true;
+      let response = await fetch(videoUrl);
+      await this.buff(e, "douyin", response);
+      return true;
 
     } catch (err) {
-    logger.error("[视频解析]-抖音解析失败:", err);
+      logger.error("[视频解析]-抖音解析失败:", err);
 
-    await e.reply("抖音解析失败，请稍后再试");
-    return false;
+      await e.reply("抖音解析失败，请稍后再试");
+      return false;
     }
   }
 
