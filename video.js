@@ -1,4 +1,4 @@
-// 原创作者🦶佬😭
+// 原作者🦶佬😭
 import plugin from "../../lib/plugins/plugin.js";
 import common from "../../lib/common/common.js";
 import fetch from "node-fetch";
@@ -39,27 +39,35 @@ export class videojx extends plugin {
   async jsonUrl(e) {
     let url;
     let msg = await JSON.parse(e.msg);
+    if (msg.ver == '0.0.0.1' && msg.meta?.news) {
+      const tag = msg.meta.news.tag;
+      if (tag === '快手' || tag === '快手极速版') {
+        url = msg.meta.news.jumpUrl;
+        this.kuaishou(e, url);
+        return true;
+      }
+    }
     if (msg.ver == '1.0.0.19' || msg.ver == '1.0.1.46') {
       url = msg.meta.detail_1.qqdocurl;
       if (msg.meta.detail_1.title == '哔哩哔哩') {
         this.bilibili(e, url);
-      } else if (msg.meta.detail_1.title == '快手') {
-        this.kuaishou(e, url);
+        return true;
       }
-    } else if (msg.ver == '0.0.0.1' && msg.meta.video) {
-      if (msg.meta.video.tag != '哔哩哔哩') return false
-      url = msg.meta.video.jumpUrl;
-      this.bilibili(e, url);
-    } else {
-      return false;
+    } else if (msg.ver == '0.0.0.1' && msg.meta?.video) {
+      if (msg.meta.video.tag == '哔哩哔哩') {
+        url = msg.meta.video.jumpUrl;
+        this.bilibili(e, url);
+        return true;
+      }
     }
+    return false;
   }
 
   //处理消息转url
   async dealUrl(e) {
     if (!isonlyAt) this.jsonUrl;
     let url;
-    let reg = RegExp(/b23.tv|m.bilibili.com|www.bilibili.com|v.kuaishou.com|(v\.douyin\.com|douyin\.com)/);
+    let reg = RegExp(/b23.tv|m.bilibili.com|www.bilibili.com|v.kuaishou.com|www.kuaishou.com|(v\.douyin\.com|douyin\.com)/);
     if (!reg.test(e.msg)) return false;
     if (e.message[0].type != 'text') return true;
     reg = /(https?|http|ftp|file):\/\/[-A-Za-z0-9+&@#/%?=~_|!:,.;]+[-A-Za-z0-9+&@#/%=~_|]/g;
@@ -70,7 +78,7 @@ export class videojx extends plugin {
     }
     if (RegExp(/v.douyin.com/).test(url)) {
       this.douyin(e, url);
-    } else if (RegExp(/v.kuaishou.com/).test(url)) {
+    } else if (RegExp(/v.kuaishou.com|www.kuaishou.com/).test(url)) {
       this.kuaishou(e, url);
     } else {
       this.bilibili(e, url);
@@ -88,7 +96,7 @@ export class videojx extends plugin {
     logger.info("[视频解析]-哔哩哔哩");
     e.reply([
       segment.image(res.pic),
-      `标题:${res.title}\n简介:${res.desc}\n作者:${res.owner.name}\n\n点赞:${res.stat.like}      收藏:${res.stat.favorite}\n投币:${res.stat.coin}      转发:${res.stat.share}\n正在解析b站视频，请等待......`
+      `作者:${res.owner.name}\n标题:${res.title}\n简介:${res.desc}\n\n点赞:${res.stat.like}      收藏:${res.stat.favorite}\n投币:${res.stat.coin}      转发:${res.stat.share}\n正在解析b站视频，请等待......`
     ]);
     let qn = this.autoQuality(e, res.duration);
     url = `https://api.bilibili.com/x/player/playurl?avid=${res.aid}&cid=${res.cid}&qn=${qn}`;
@@ -108,7 +116,7 @@ export class videojx extends plugin {
     try {
       logger.info("[视频解析]-开始解析抖音URL");
 
-      // 调用新API
+      // 调用API
       let apiUrl = `http://api.xhus.cn/api/douyin?url=${encodeURIComponent(url)}`;
       let res = await fetch(apiUrl);
 
@@ -124,12 +132,6 @@ export class videojx extends plugin {
       }
 
       const videoData = data.data;
-
-      // 检测是否为图集
-      if (videoData.images && Array.isArray(videoData.images) && videoData.images.length > 0) {
-        await e.reply("暂不支持图集解析");
-        return false;
-      }
 
       const author = videoData.author || "未知作者";
       const uid = videoData.uid || "未知";
@@ -162,7 +164,7 @@ export class videojx extends plugin {
       msg.push(
         `作者: ${author}\n` +
         `抖音号: ${uid}\n` +
-        `标题/描述: ${title}\n` +
+        `标题: ${title}\n` +
         `点赞: ${likeStr}`
       );
 
@@ -190,8 +192,8 @@ export class videojx extends plugin {
     try {
       logger.info("[视频解析]-开始解析快手URL");
 
-      let apiUrl = `https://api.bugpk.com/api/ksjx?url=${encodeURIComponent(url)}`;
-
+      // 调用API
+      let apiUrl = `http://api.xhus.cn/api/ksvideo?url=${encodeURIComponent(url)}`;
       let res = await fetch(apiUrl);
 
       if (!res.ok) {
@@ -206,15 +208,11 @@ export class videojx extends plugin {
       }
 
       const videoData = data.data;
-
-      // 检测是否为图集
-      if (videoData.images && Array.isArray(videoData.images) && videoData.images.length > 0) {
-        await e.reply("暂不支持图集解析");
-        return false;
-      }
-
       const author = videoData.author || "未知作者";
       const title = videoData.title || "无描述";
+      const like = videoData.like || 0;
+      const cover = videoData.cover;
+      const avatar = videoData.avatar;
       const videoUrl = videoData.url;
 
       if (!videoUrl) {
@@ -224,16 +222,29 @@ export class videojx extends plugin {
       logger.info("[视频解析]-快手[视频]");
       let msg = [];
 
-      // 发送封面
-      if (videoData.cover) {
-        msg.push(segment.image(videoData.cover));
+      // 发送作者头像
+      if (avatar) {
+        msg.push(segment.image(avatar));
+      }
+
+      // 格式化点赞数
+      let likeStr = "";
+      if (like >= 10000) {
+        likeStr = (like / 10000).toFixed(1) + "万";
+      } else {
+        likeStr = like + "个";
       }
 
       msg.push(
         `作者: ${author}\n` +
-        `描述: ${title}\n\n` +
-        `正在解析快手视频，请等待......`
+        `标题: ${title}\n` +
+        `点赞: ${likeStr}`
       );
+
+      // 发送视频封面
+      if (cover) {
+        msg.push(segment.image(cover));
+      }
 
       await e.reply(msg);
 
@@ -244,7 +255,7 @@ export class videojx extends plugin {
     } catch (err) {
       logger.error("[视频解析]-快手解析失败:", err);
 
-      await e.reply("快手解析超时或失败，请稍后再试");
+      await e.reply("快手解析失败，请稍后再试");
       return false;
     }
   }
