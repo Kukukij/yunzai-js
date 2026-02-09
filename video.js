@@ -1,5 +1,4 @@
 // 原作者🦶佬😭
-import plugin from "../../lib/plugins/plugin.js";
 import fetch from "node-fetch";
 import fs from "node:fs";
 
