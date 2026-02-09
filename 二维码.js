@@ -7,18 +7,16 @@ export class QRCodeGenerator extends plugin {
       dsc: '生成二维码图片',
       event: 'message',
       priority: 10,
-      rule: [
-        {
-          reg: '^#二维码(.+)$',
-          fnc: 'generateQRCode'
-        }
-      ]
+      rule: [{
+        reg: '^#二维码(.+)$',
+        fnc: 'generateQRCode'
+      }]
     })
   }
 
   async generateQRCode() {
     const content = this.e.msg.replace(/^#二维码/, '').trim()
-    
+
     if (!content) {
       await this.reply('请输入要生成二维码的内容', true)
       return

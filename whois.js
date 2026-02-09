@@ -7,98 +7,69 @@ export class WhoisQuery extends plugin {
       dsc: '查询域名WHOIS信息',
       event: 'message',
       priority: 10,
-      rule: [
-        {
-          reg: /^#?(whois|域名信息)查询\s?.+$/i,
-          fnc: 'queryWhois'
-        }
-      ]
+      rule: [{
+        reg: /^#?(whois|域名信息)查询\s?.+$/i,
+        fnc: 'queryWhois'
+      }]
     })
   }
 
   async queryWhois() {
-    let originalDomain = this.e.msg.replace(/^#?(whois|域名信息)查询\s?/i, '').trim()
-    if (!originalDomain) {
-      await this.reply('请输入要查询的域名')
-      return
-    }
-
-    let queryDomain = originalDomain
-    if (/[\u4e00-\u9fa5]/.test(originalDomain)) {
-      try {
-        const url = new URL(`http://${originalDomain}`)
-        queryDomain = url.hostname
-      } catch (error) {
-        console.warn('域名解析失败，使用原域名:', error)
-      }
-    }
+    let input = this.e.msg.replace(/^#?(whois|域名信息)查询\s?/i, '').trim()
+    if (!input) return this.reply('请输入要查询的域名')
 
     try {
-      const apiUrl = `https://v2.xxapi.cn/api/whois?domain=${encodeURIComponent(queryDomain)}`
+      const apiUrl = `https://v2.xxapi.cn/api/whois?domain=${encodeURIComponent(input)}`
       const response = await fetch(apiUrl)
       const data = await response.json()
 
-      if (data.code !== 200 || !data.data) {
-        await this.reply('查询失败，请检查域名是否正确或稍后再试')
-        return
-      }
+      if (data.code !== 200 || !data.data) return this.reply('查询失败')
 
-      const forwardMsg = []
-
-      forwardMsg.push({
+      const forwardMsg = [{
         user_id: this.e.bot.uin,
         nickname: 'WHOIS查询结果',
-        message: `域名: ${originalDomain}`
-      })
+        message: `域名: ${input}`
+      }]
 
-      const allFields = [
-        { name: '注册人', key: 'Registrant' },
-        { name: '注册人邮箱', key: 'Registrant Contact Email' },
-        { name: '注册商', key: 'Sponsoring Registrar' },
-        { name: '注册商URL', key: 'Registrar URL' },
-        { name: '注册时间', key: 'Registration Time' },
-        { name: '过期时间', key: 'Expiration Time' },
-        { name: '域名状态', key: 'domain_status' },
-        { name: 'DNS服务器', key: 'DNS Serve' }
+      const fields = [
+        '注册人', '注册人邮箱', '注册商', '注册商URL',
+        '注册时间', '过期时间', '域名状态', 'DNS服务器'
       ]
 
-      for (const field of allFields) {
-        let value = data.data[field.key] || data.data.data?.[field.key.toLowerCase()] || '无信息'
-        
-        if (Array.isArray(value)) {
-          value = value.join('\n')
-        }
-        
-        if (!value || value === '无信息') {
-          value = '未公开'
-        }
+      const keys = [
+        'Registrant', 'Registrant Contact Email', 'Sponsoring Registrar', 'Registrar URL',
+        'Registration Time', 'Expiration Time', 'domain_status', 'DNS Serve'
+      ]
+
+      for (let i = 0; i < fields.length; i++) {
+        let value = data.data[keys[i]] || data.data.data?.[keys[i].toLowerCase()] || '未公开'
+
+        if (Array.isArray(value)) value = value.join('\n')
+        if (!value || value === '未公开') value = '未公开'
 
         forwardMsg.push({
           user_id: this.e.bot.uin,
           nickname: 'WHOIS查询结果',
-          message: `${field.name}: ${value}`
+          message: `${fields[i]}: ${value}`
         })
       }
 
-      let ngm
-      if (this.e.isGroup) {
-        ngm = await this.e.group.makeForwardMsg(forwardMsg)
-      } else {
-        ngm = await this.e.friend.makeForwardMsg(forwardMsg)
+      let ngm = this.e.isGroup ?
+        await this.e.group.makeForwardMsg(forwardMsg) :
+        await this.e.friend.makeForwardMsg(forwardMsg)
+
+      if (ngm.data?.meta?.detail) {
+        ngm.data.meta.detail = {
+          news: [{
+            text: 'WHOIS查询结果'
+          }],
+          source: 'WHOIS查询',
+          summary: 'WHOIS查询',
+          preview: ''
+        }
       }
 
-      if (typeof ngm.data === 'object') {
-        let detail = ngm.data?.meta?.detail
-        if (detail) {
-          detail.news = [{ text: 'WHOIS查询结果' }]
-          detail.source = 'WHOIS查询'
-          detail.summary = 'WHOIS查询'
-          detail.preview = ''
-        }
-        if (ngm.data?.prompt) {
-          ngm.data.prompt = 'WHOIS查询结果'
-        }
-      }
+      if (ngm.data?.prompt) ngm.data.prompt = 'WHOIS查询结果'
 
       await this.reply(ngm)
 
