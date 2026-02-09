@@ -24,7 +24,7 @@ curl -o ./plugins/example/video.js https://git.119899.xyz/raw.githubusercontent.
 ```
 | 指令 | 功能 | 备注 |
 |----|----|----|
-| 视频链接 | 自动解析短视频发送无水印视频 | 支持bilibili/快手/抖音 |
+| 视频链接 | 自动解析视频链接,发送无水印视频 | 支持哔哩哔哩/快手/抖音 |
 ---
 
 ## 二维码
