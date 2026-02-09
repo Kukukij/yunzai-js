@@ -6,7 +6,7 @@ curl -o ./plugins/example/ICP.js https://git.119899.xyz/raw.githubusercontent.co
 ```
 | 指令 | 功能 | 备注 |
 |----|----|----|
-| #icp查询+域名 | 查询icp域名备案信息 |  |
+| #icp查询+域名 | 查询域名icp备案情况 |  |
 ---
 
 ## whois
@@ -24,7 +24,7 @@ curl -o ./plugins/example/video.js https://git.119899.xyz/raw.githubusercontent.
 ```
 | 指令 | 功能 | 备注 |
 |----|----|----|
-| 视频链接 | 解析短视频信息 | 支持bilibili/快手/抖音等平台 |
+| 视频链接 | 自动解析短视频发送无水印视频 | 支持bilibili/快手/抖音 |
 ---
 
 ## 二维码
