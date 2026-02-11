@@ -1,5 +1,3 @@
-import fetch from 'node-fetch'
-
 export class QRCodeGenerator extends plugin {
   constructor() {
     super({
