@@ -92,14 +92,14 @@ export class videojx extends plugin {
     url = `https://api.bilibili.com/x/web-interface/view?bvid=${bvid}`;
     res = await this.tourl(url);
     logger.info("[视频解析]-哔哩哔哩");
-    e.reply([
-      segment.image(res.pic),
-      `作者:${res.owner.name}\n标题:${res.title}\n简介:${res.desc}\n\n点赞:${res.stat.like}      收藏:${res.stat.favorite}\n投币:${res.stat.coin}      转发:${res.stat.share}\n正在解析b站视频，请等待......`
-    ]);
     let qn = this.autoQuality(e, res.duration);
     if (qn === null) {
       return false;
     }
+    e.reply([
+      segment.image(res.pic),
+      `作者:${res.owner.name}\n标题:${res.title}\n简介:${res.desc}\n\n点赞:${res.stat.like}      收藏:${res.stat.favorite}\n投币:${res.stat.coin}      转发:${res.stat.share}\n正在解析b站视频，请等待......`
+    ]);
     url = `https://api.bilibili.com/x/player/playurl?avid=${res.aid}&cid=${res.cid}&qn=${qn}`;
     res = await this.tourl(url);
     url = res.durl[0].url;
@@ -290,7 +290,7 @@ export class videojx extends plugin {
   autoQuality(e, duration) {
     let qn = 80;
     if (duration >= 600) {
-      e.reply("视频时长超过10分钟，不做解析");
+      e.reply("视频时长超过10分钟，不做解析。");
       return null;
     } else if (duration >= 300) {
       e.reply("视频时长超过5分钟，已将视频画质降低至360p");
