@@ -36,8 +36,11 @@ export class videojx extends plugin {
 
   async jsonUrl(e) {
     let url, msg = await JSON.parse(e.msg);
-    if (msg.ver == '0.0.0.1' && msg.meta?.news && ['快手','快手极速版'].includes(msg.meta.news.tag)) {
-      url = msg.meta.news.jumpUrl; this.kuaishou(e, url); return true;
+    if (msg.ver == '0.0.0.1' && msg.meta?.news && ['快手','快手极速版','小红书'].includes(msg.meta.news.tag)) {
+      url = msg.meta.news.jumpUrl;
+      if (msg.meta.news.tag === '小红书') this.xiaohongshu(e, url);
+      else this.kuaishou(e, url);
+      return true;
     }
     if (msg.ver == '1.0.0.19' || msg.ver == '1.0.1.46') {
       if (msg.meta.detail_1.title == '哔哩哔哩') { url = msg.meta.detail_1.qqdocurl; this.bilibili(e, url); return true; }
@@ -49,11 +52,12 @@ export class videojx extends plugin {
 
   async dealUrl(e) {
     if (!isonlyAt) this.jsonUrl;
-    let url, reg = /b23.tv|m.bilibili.com|www.bilibili.com|v.kuaishou.com|www.kuaishou.com|(v\.douyin\.com|douyin\.com)/;
+    let url, reg = /b23.tv|m.bilibili.com|www.bilibili.com|v.kuaishou.com|www.kuaishou.com|(v\.douyin\.com|douyin\.com)|xhslink\.com/;
     if (!reg.test(e.msg) || e.message[0].type != 'text') return false;
     try { url = e.msg.match(/(https?|http|ftp|file):\/\/[-A-Za-z0-9+&@#/%?=~_|!:,.;]+[-A-Za-z0-9+&@#/%=~_|]/g)[0]; } catch { return false; }
     if (/v.douyin.com/.test(url)) this.douyin(e, url);
     else if (/v.kuaishou.com|www.kuaishou.com/.test(url)) this.kuaishou(e, url);
+    else if (/xhslink\.com/.test(url)) this.xiaohongshu(e, url);
     else this.bilibili(e, url);
   }
 
@@ -119,6 +123,30 @@ export class videojx extends plugin {
       }
       return true;
     } catch { await e.reply("快手解析失败"); return false; }
+  }
+
+  async xiaohongshu(e, url) {
+    try {
+      let data = await (await fetch(`https://api.xhus.cn/api/autopars?url=${encodeURIComponent(url)}`)).json();
+      if (data.code !== 200) throw new Error();
+      let d = data.data, isAlbum = d.type === 'album';
+      if (!d.url && !isAlbum) throw new Error();
+      
+      let msg = [];
+      if (d.avatar) msg.push(segment.image(d.avatar));
+      msg.push(`作者: ${d.author}\n标题: ${d.title}`);
+      if (d.cover) msg.push(segment.image(d.cover));
+      await e.reply(msg);
+
+      if (isAlbum) {
+        let ngm = await this.sendForwardMsg(e, '小红书图集', d.images);
+        await this.reply(ngm);
+      } else {
+        let response = await fetch(d.url);
+        await this.buff(e, "xiaohongshu", response);
+      }
+      return true;
+    } catch { await e.reply("小红书解析失败"); return false; }
   }
 
   async tourl(url) { return (await (await fetch(url)).json()).data; }
