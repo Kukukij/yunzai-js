@@ -134,7 +134,7 @@ export class videojx extends plugin {
       
       let msg = [];
       if (d.avatar) msg.push(segment.image(d.avatar));
-      msg.push(`作者: ${d.author}\n标题: ${d.title}`);
+      msg.push(`作者: ${d.author}\n标题: ${d.title}\n描述: ${d.desc}`);
       if (d.cover) msg.push(segment.image(d.cover));
       await e.reply(msg);
 
