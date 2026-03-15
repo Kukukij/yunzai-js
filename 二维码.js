@@ -13,19 +13,12 @@ export class QRCodeGenerator extends plugin {
   }
 
   async generateQRCode() {
-    const content = this.e.msg.replace(/^#二维码/, '').trim()
-
-    if (!content) {
-      await this.reply('请输入要生成二维码的内容', true)
-      return
-    }
-
+    let c = this.e.msg.replace(/^#二维码/, '').trim()
+    if (!c) return this.reply('请输入要生成二维码的内容', true)
+    
     try {
-      const apiUrl = `https://api.2dcode.biz/v1/create-qr-code?data=${encodeURIComponent(content)}`
-      await this.reply(segment.image(apiUrl), true)
-
-    } catch (error) {
-      console.error('二维码生成出错:', error)
+      await this.reply(segment.image(`https://api.2dcode.biz/v1/create-qr-code?data=${encodeURIComponent(c)}`), true)
+    } catch {
       await this.reply('生成二维码失败，请稍后再试', true)
     }
   }

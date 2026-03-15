@@ -19,62 +19,39 @@ export class WhoisQuery extends plugin {
     if (!input) return this.reply('请输入要查询的域名')
 
     try {
-      const apiUrl = `https://v2.xxapi.cn/api/whois?domain=${encodeURIComponent(input)}`
-      const response = await fetch(apiUrl)
-      const data = await response.json()
-
+      let data = await (await fetch(`https://v2.xxapi.cn/api/whois?domain=${encodeURIComponent(input)}`)).json()
       if (data.code !== 200 || !data.data) return this.reply('查询失败')
 
-      const forwardMsg = [{
+      let msg = [{
         user_id: this.e.bot.uin,
         nickname: 'WHOIS查询结果',
         message: `域名: ${input}`
       }]
 
-      const fields = [
-        '注册人', '注册人邮箱', '注册商', '注册商URL',
-        '注册时间', '过期时间', '域名状态', 'DNS服务器'
-      ]
+      let fields = ['注册人','注册人邮箱','注册商','注册商URL','注册时间','过期时间','域名状态','DNS服务器']
+      let keys = ['Registrant','Registrant Contact Email','Sponsoring Registrar','Registrar URL','Registration Time','Expiration Time','domain_status','DNS Serve']
 
-      const keys = [
-        'Registrant', 'Registrant Contact Email', 'Sponsoring Registrar', 'Registrar URL',
-        'Registration Time', 'Expiration Time', 'domain_status', 'DNS Serve'
-      ]
+      fields.forEach((f, i) => {
+        let v = data.data[keys[i]] || data.data.data?.[keys[i].toLowerCase()] || '未公开'
+        if (Array.isArray(v)) v = v.join('\n')
+        msg.push({ user_id: this.e.bot.uin, nickname: 'WHOIS查询结果', message: `${f}: ${v}` })
+      })
 
-      for (let i = 0; i < fields.length; i++) {
-        let value = data.data[keys[i]] || data.data.data?.[keys[i].toLowerCase()] || '未公开'
+      let ngm = this.e.isGroup ? 
+        await this.e.group.makeForwardMsg(msg) : 
+        await this.e.friend.makeForwardMsg(msg)
 
-        if (Array.isArray(value)) value = value.join('\n')
-        if (!value || value === '未公开') value = '未公开'
-
-        forwardMsg.push({
-          user_id: this.e.bot.uin,
-          nickname: 'WHOIS查询结果',
-          message: `${fields[i]}: ${value}`
-        })
+      if (ngm.data?.meta?.detail) ngm.data.meta.detail = {
+        news: [{ text: 'WHOIS查询结果' }],
+        source: 'WHOIS查询',
+        summary: 'WHOIS查询',
+        preview: ''
       }
-
-      let ngm = this.e.isGroup ?
-        await this.e.group.makeForwardMsg(forwardMsg) :
-        await this.e.friend.makeForwardMsg(forwardMsg)
-
-      if (ngm.data?.meta?.detail) {
-        ngm.data.meta.detail = {
-          news: [{
-            text: 'WHOIS查询结果'
-          }],
-          source: 'WHOIS查询',
-          summary: 'WHOIS查询',
-          preview: ''
-        }
-      }
-
+      
       if (ngm.data?.prompt) ngm.data.prompt = 'WHOIS查询结果'
 
       await this.reply(ngm)
-
-    } catch (error) {
-      console.error('WHOIS查询出错:', error)
+    } catch {
       await this.reply('查询出错，请稍后再试')
     }
   }
